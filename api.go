@@ -2,11 +2,8 @@ package main
 
 import (
 	"bytes"
-	"net/http"
-	//"os"
-	//"github.com/zenazn/goji"
-	//"github.com/zenazn/goji/web"
 	"log"
+	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/olahol/go-imageupload"
@@ -15,13 +12,13 @@ import (
 func NewAPI(region, bucket string) *API {
 	return &API{
 		BucketName: bucket,
-		S3m:        NewS3(region),
+		S3m:        NewS3Backend(region, bucket),
 	}
 }
 
 type API struct {
 	BucketName string
-	S3m        *S3
+	S3m        *S3Backend
 }
 
 func (api *API) UploadFile(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +36,8 @@ func (api *API) UploadFile(w http.ResponseWriter, r *http.Request) {
 	log.Printf("hash: %s", hash)
 
 	reader := bytes.NewReader(img.Data)
-	_, err = api.S3m.UploadFromReader(api.BucketName, hash, "image/png", reader)
+	_, err = api.S3m.StoreWithReader(hash, "image/png", reader)
+	//_, err = api.S3m.UploadFromReader(api.BucketName, hash, "image/png", reader)
 	if err != nil {
 		panic(err)
 	}
