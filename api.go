@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/olahol/go-imageupload"
 )
 
@@ -51,12 +50,12 @@ func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
 		Data:        img.Data,
 	}
 
-	m, err := api.S3m.Store(data)
+	path, err := api.S3m.Store(data)
 	if err != nil {
 		panic(err)
 	}
 
-	w.Write([]byte(m["name"]))
+	w.Write([]byte(path))
 }
 
 func (api *API) GetBin(w http.ResponseWriter, r *http.Request) {
@@ -69,11 +68,10 @@ func (api *API) GetBin(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("get file: %s", name)
 
-	wab := new(aws.WriteAtBuffer)
-	_, err := api.S3m.GetToWriteAt(name, wab)
+	data, err := api.S3m.Get(name)
 	if err != nil {
 		panic(err)
 	}
 
-	w.Write(wab.Bytes())
+	w.Write(data)
 }

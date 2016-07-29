@@ -22,13 +22,6 @@ func (d *RNBinData) GenDistHead() string {
 	return hash[:6] + "-" + d.Sep + "/" + hash
 }
 
-type Backend interface {
-	Store(*RNBinData) (map[string]string, error)
-	StoreWithReader(path, contentType string, reader io.Reader) (map[string]string, error)
-	Get(name string) (*RNBinData, error)
-	GetToWriteAt(path, w io.WriterAt) (int64, error)
-}
-
 func NewS3Backend(region, bucket string) *S3Backend {
 	session := session.New(&aws.Config{Region: aws.String(region)})
 	uploader := s3manager.NewUploader(session)
@@ -47,13 +40,12 @@ type S3Backend struct {
 	Downloader *s3manager.Downloader
 }
 
-func (s3 *S3Backend) Store(data *RNBinData) (map[string]string, error) {
-
+func (s3 *S3Backend) Store(data *RNBinData) (string, error) {
 	r := bytes.NewReader(data.Data)
 	return s3.StoreWithReader(data.GenDistHead(), data.Name, data.ContentType, r)
 }
 
-func (s3 *S3Backend) StoreWithReader(path, name, contentType string, reader io.Reader) (map[string]string, error) {
+func (s3 *S3Backend) StoreWithReader(path, name, contentType string, reader io.Reader) (string, error) {
 	// UploadInput
 	// https://github.com/aws/aws-sdk-go/blob/master/service/s3/s3manager/upload.go#L99
 	_, err := s3.Uploader.Upload(&s3manager.UploadInput{
@@ -64,26 +56,20 @@ func (s3 *S3Backend) StoreWithReader(path, name, contentType string, reader io.R
 	})
 
 	if err != nil {
-		return nil, err
+		return "", err
 	} else {
-		m := make(map[string]string, 1)
-		m["name"] = path
-		return m, nil
+		return path, nil
 	}
 }
 
-func (s3 *S3Backend) Get(path string) (*RNBinData, error) {
+func (s3 *S3Backend) Get(path string) ([]byte, error) {
 	buf := new(aws.WriteAtBuffer)
 	_, err := s3.GetToWriteAt(path, buf)
 	if err != nil {
 		return nil, err
 	}
 
-	data := &RNBinData{
-		Data: buf.Bytes(),
-	}
-
-	return data, nil
+	return buf.Bytes(), nil
 }
 
 func (s3m *S3Backend) GetToWriteAt(path string, w io.WriterAt) (int64, error) {
