@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"io"
 
-	"crypto/sha256"
-	"encoding/hex"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -95,10 +92,4 @@ func (s3m *S3Backend) GetToWriteAt(name string, w io.WriterAt) (int64, error) {
 	}
 
 	return numBytes, nil
-}
-
-func Sha256(bytes []byte) string {
-	hasher := sha256.New()
-	hasher.Write(bytes)
-	return hex.EncodeToString(hasher.Sum(nil))
 }
