@@ -21,7 +21,7 @@ type API struct {
 	S3m        *S3Backend
 }
 
-func (api *API) UploadFile(w http.ResponseWriter, r *http.Request) {
+func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
 	// get from 'file' request parameter
 	img, err := imageupload.Process(r, "file")
 	if err != nil {
@@ -45,7 +45,7 @@ func (api *API) UploadFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(hash))
 }
 
-func (api *API) DownloadFile(w http.ResponseWriter, r *http.Request) {
+func (api *API) GetBin(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	name := r.Form.Get("name")
 	if name == "" {
@@ -56,7 +56,7 @@ func (api *API) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	log.Printf("get file: %s", name)
 
 	wab := new(aws.WriteAtBuffer)
-	_, err := api.S3m.Download(api.BucketName, name, wab)
+	_, err := api.S3m.GetToWriteAt(name, wab)
 	if err != nil {
 		panic(err)
 	}

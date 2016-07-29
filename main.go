@@ -65,8 +65,8 @@ func createAPI(region, bucket string) (http.Handler, error) {
 	api := NewAPI(region, bucket)
 
 	apiMux := web.New()
-	apiMux.Handle("/api/upload", api.UploadFile)
-	apiMux.Handle("/api/download", api.DownloadFile)
+	apiMux.Post("/api/bin", api.PostBin)
+	apiMux.Get("/api/bin", api.GetBin)
 
 	return apiMux, nil
 }
