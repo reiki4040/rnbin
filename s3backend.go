@@ -11,16 +11,22 @@ import (
 )
 
 type RNBinData struct {
+	Sep         string
 	Name        string
 	ContentType string
 	Data        []byte
 }
 
+func (d *RNBinData) GenDistHead() string {
+	hash := Sha256(d.Data)
+	return hash[:6] + "-" + d.Sep + "/" + hash
+}
+
 type Backend interface {
 	Store(*RNBinData) (map[string]string, error)
-	StoreWithReader(name, contentType string, reader io.Reader) (map[string]string, error)
+	StoreWithReader(path, contentType string, reader io.Reader) (map[string]string, error)
 	Get(name string) (*RNBinData, error)
-	GetToWriteAt(name string, w io.WriterAt) (int64, error)
+	GetToWriteAt(path, w io.WriterAt) (int64, error)
 }
 
 func NewS3Backend(region, bucket string) *S3Backend {
@@ -42,17 +48,18 @@ type S3Backend struct {
 }
 
 func (s3 *S3Backend) Store(data *RNBinData) (map[string]string, error) {
+
 	r := bytes.NewReader(data.Data)
-	return s3.StoreWithReader(data.Name, data.ContentType, r)
+	return s3.StoreWithReader(data.GenDistHead(), data.Name, data.ContentType, r)
 }
 
-func (s3 *S3Backend) StoreWithReader(name, contentType string, reader io.Reader) (map[string]string, error) {
+func (s3 *S3Backend) StoreWithReader(path, name, contentType string, reader io.Reader) (map[string]string, error) {
 	// UploadInput
 	// https://github.com/aws/aws-sdk-go/blob/master/service/s3/s3manager/upload.go#L99
 	_, err := s3.Uploader.Upload(&s3manager.UploadInput{
 		Body:        reader,
 		Bucket:      aws.String(s3.BucketName),
-		Key:         aws.String(name),
+		Key:         aws.String(path),
 		ContentType: aws.String(contentType),
 	})
 
@@ -60,30 +67,29 @@ func (s3 *S3Backend) StoreWithReader(name, contentType string, reader io.Reader)
 		return nil, err
 	} else {
 		m := make(map[string]string, 1)
-		m["name"] = name
+		m["name"] = path
 		return m, nil
 	}
 }
 
-func (s3 *S3Backend) Get(name string) (*RNBinData, error) {
+func (s3 *S3Backend) Get(path string) (*RNBinData, error) {
 	buf := new(aws.WriteAtBuffer)
-	_, err := s3.GetToWriteAt(name, buf)
+	_, err := s3.GetToWriteAt(path, buf)
 	if err != nil {
 		return nil, err
 	}
 
 	data := &RNBinData{
-		Name: name,
 		Data: buf.Bytes(),
 	}
 
 	return data, nil
 }
 
-func (s3m *S3Backend) GetToWriteAt(name string, w io.WriterAt) (int64, error) {
+func (s3m *S3Backend) GetToWriteAt(path string, w io.WriterAt) (int64, error) {
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(s3m.BucketName),
-		Key:    aws.String(name),
+		Key:    aws.String(path),
 	}
 
 	numBytes, err := s3m.Downloader.Download(w, input)
