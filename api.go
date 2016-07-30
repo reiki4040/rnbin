@@ -6,18 +6,20 @@ import (
 	"net/http"
 
 	"github.com/olahol/go-imageupload"
+
+	s3b "github.com/reiki4040/rnbin/s3backend"
 )
 
 func NewAPI(region, bucket string) *API {
 	return &API{
 		BucketName: bucket,
-		S3m:        NewS3Backend(region, bucket),
+		S3m:        s3b.NewS3Backend(region, bucket),
 	}
 }
 
 type API struct {
 	BucketName string
-	S3m        *S3Backend
+	S3m        *s3b.S3Backend
 }
 
 func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +52,7 @@ func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
 
 	meta := make(map[string]string, 1)
 	meta["comment"] = comment
-	data := &RNBinData{
+	data := &s3b.RNBinData{
 		Sep:         sep,
 		Name:        "",
 		ContentType: contentType,
@@ -151,6 +153,7 @@ func ConvertMeta(m map[string]*string) *Meta {
 	if comment != nil {
 		meta.Comment = *comment
 	}
+	log.Printf("meta: ", meta.Comment)
 
 	return meta
 }

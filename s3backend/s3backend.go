@@ -1,9 +1,12 @@
-package main
+package s3backend
 
 import (
 	"bufio"
 	"bytes"
 	"io"
+
+	"crypto/sha256"
+	"encoding/hex"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -141,4 +144,10 @@ func (s3m *S3Backend) GetObjectWithReadCloser(path string) (io.ReadCloser, map[s
 	}
 
 	return resp.Body, resp.Metadata, nil
+}
+
+func Sha256(bytes []byte) string {
+	hasher := sha256.New()
+	hasher.Write(bytes)
+	return hex.EncodeToString(hasher.Sum(nil))
 }
