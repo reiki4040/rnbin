@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -28,22 +29,19 @@ func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
 
 	sep := r.FormValue("sep")
 	if sep == "" {
-		w.WriteHeader(400)
-		w.Write([]byte("sep is required"))
+		responseBadRequest(w, "sep is required")
 		return
 	}
 
 	comment := r.FormValue("comment")
 	if len(comment) > 140 {
-		w.WriteHeader(400)
-		w.Write([]byte("comment lenght lower equal 140"))
+		responseBadRequest(w, "comment lenght lower equal 140")
 		return
 	}
 
 	contentType := img.ContentType
 	if contentType == "" {
-		w.WriteHeader(400)
-		w.Write([]byte("content type is required"))
+		responseBadRequest(w, "content type is required")
 		return
 	}
 
@@ -65,15 +63,18 @@ func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	w.Write([]byte(path))
+	responseOK(w, &PostBinResp{Path: path})
+}
+
+type PostBinResp struct {
+	Path string `json:"path"`
 }
 
 func (api *API) GetBin(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	name := r.FormValue("name")
 	if name == "" {
-		w.WriteHeader(400)
-		w.Write([]byte("require name parameter."))
+		responseBadRequest(w, "require name parameter.")
 		return
 	}
 	log.Printf("get file: %s", name)
@@ -90,8 +91,7 @@ func (api *API) GetMeta(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	name := r.FormValue("name")
 	if name == "" {
-		w.WriteHeader(400)
-		w.Write([]byte("require name parameter."))
+		responseBadRequest(w, "require name parameter.")
 		return
 	}
 	log.Printf("get file meta: %s", name)
@@ -102,13 +102,74 @@ func (api *API) GetMeta(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("get meta len: %d", len(meta))
 
-	for k, v := range meta {
-		w.Write([]byte(k))
-		w.Write([]byte(":"))
-		if v != nil {
-			w.Write([]byte(*v))
-		} else {
-			w.Write([]byte("nil"))
-		}
+	resp := ConvertMeta(meta)
+
+	responseOK(w, resp)
+}
+
+func responseOK(w http.ResponseWriter, resp interface{}) {
+	responseJson(w, http.StatusOK, resp)
+}
+
+func responseBadRequest(w http.ResponseWriter, msg string) {
+	responseError(w, http.StatusBadRequest, msg)
+}
+
+func responseError(w http.ResponseWriter, status int, msg string) {
+	responseJson(w, status, NewErrResp(msg))
+}
+
+func responseJson(w http.ResponseWriter, status int, item interface{}) {
+	j, err := json.Marshal(item)
+	if err != nil {
+		// TODO internal server error
+		panic(err)
 	}
+
+	writeResponse(w, status, j)
+}
+
+func writeResponse(w http.ResponseWriter, status int, body []byte) {
+	w.WriteHeader(status)
+	w.Write(body)
+}
+
+func ConvertMeta(m map[string]*string) *Meta {
+	meta := &Meta{}
+
+	key := m["key"]
+	if key != nil {
+		meta.Key = *key
+	}
+
+	createBy := m["create_by"]
+	if createBy != nil {
+		meta.CreateBy = *createBy
+	}
+
+	comment := m["comment"]
+	if comment != nil {
+		meta.Comment = *comment
+	}
+
+	return meta
+}
+
+type MetaResponse struct {
+	Metadata Meta `json:"metadata"`
+}
+
+type Meta struct {
+	Key         string `json:"key"`
+	ContentType string `json:"content_type"`
+	CreateBy    string `json:"create_by"`
+	Comment     string `json:"comment"`
+}
+
+func NewErrResp(msg string) *ErrorResponse {
+	return &ErrorResponse{Msg: msg}
+}
+
+type ErrorResponse struct {
+	Msg string `json:"error_message"`
 }
