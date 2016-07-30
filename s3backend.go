@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 
@@ -113,4 +114,31 @@ func (s3m *S3Backend) GetMeta(path string) (map[string]*string, error) {
 	}
 
 	return resp.Metadata, nil
+}
+
+func (s3m *S3Backend) GetObject(path string) ([]byte, map[string]*string, error) {
+	r, meta, err := s3m.GetObjectWithReadCloser(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer r.Close()
+
+	sc := bufio.NewScanner(r)
+	data := sc.Bytes()
+
+	return data, meta, nil
+}
+
+func (s3m *S3Backend) GetObjectWithReadCloser(path string) (io.ReadCloser, map[string]*string, error) {
+	params := &s3.GetObjectInput{
+		Bucket: aws.String(s3m.BucketName),
+		Key:    aws.String(path),
+	}
+
+	resp, err := s3m.S3Srv.GetObject(params)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return resp.Body, resp.Metadata, nil
 }
