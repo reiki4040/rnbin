@@ -136,24 +136,24 @@ func writeResponse(w http.ResponseWriter, status int, body []byte) {
 	w.Write(body)
 }
 
+// caution: s3 metadata key name first char is Upper
 func ConvertMeta(m map[string]*string) *Meta {
 	meta := &Meta{}
 
-	key := m["key"]
+	key := m["Key"]
 	if key != nil {
 		meta.Key = *key
 	}
 
-	createBy := m["create_by"]
+	createBy := m["Create_by"]
 	if createBy != nil {
 		meta.CreateBy = *createBy
 	}
 
-	comment := m["comment"]
+	comment := m["Comment"]
 	if comment != nil {
 		meta.Comment = *comment
 	}
-	log.Printf("meta: ", meta.Comment)
 
 	return meta
 }
