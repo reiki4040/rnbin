@@ -1,0 +1,49 @@
+hash: 6f8b7fa313a49437fba9ddcbd9181aee39986492eab22e33c1dbfe9d78387ec6
+updated: 2016-07-31T14:20:35.127147104+09:00
+imports:
+- name: github.com/aws/aws-sdk-go
+  version: 3b8c171554fc7d4fc53b87e25d4926a9e7495c2e
+  subpackages:
+  - aws
+  - aws/session
+  - service/s3
+  - service/s3/s3manager
+  - aws/awserr
+  - aws/credentials
+  - aws/client
+  - aws/corehandlers
+  - aws/defaults
+  - aws/request
+  - private/endpoints
+  - aws/awsutil
+  - aws/client/metadata
+  - aws/signer/v4
+  - private/protocol
+  - private/protocol/restxml
+  - private/waiter
+  - service/s3/s3iface
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/ec2metadata
+  - private/protocol/rest
+  - private/protocol/query
+  - private/protocol/xml/xmlutil
+  - private/protocol/query/queryutil
+- name: github.com/go-ini/ini
+  version: cf53f9204df4fbdd7ec4164b57fa6184ba168292
+- name: github.com/jmespath/go-jmespath
+  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
+- name: github.com/nfnt/resize
+  version: 891127d8d1b52734debe1b3c3d7e747502b6c366
+- name: github.com/olahol/go-imageupload
+  version: 09d2b92fa05eff7d0c06d77a7803c74a824b0eb1
+- name: github.com/zenazn/goji
+  version: 64eb34159fe53473206c2b3e70fe396a639452f2
+  subpackages:
+  - web
+  - bind
+  - graceful
+  - web/middleware
+  - graceful/listener
+  - web/mutil
+devImports: []

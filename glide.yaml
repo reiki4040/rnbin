@@ -1,0 +1,12 @@
+package: github.com/reiki4040/rnbin
+import:
+- package: github.com/aws/aws-sdk-go
+  subpackages:
+  - aws
+  - aws/session
+  - service/s3
+  - service/s3/s3manager
+- package: github.com/olahol/go-imageupload
+- package: github.com/zenazn/goji
+  subpackages:
+  - web

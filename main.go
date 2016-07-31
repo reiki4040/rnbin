@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -14,6 +15,12 @@ import (
 )
 
 var (
+	version   string
+	hash      string
+	goversion string
+
+	optVersion bool
+
 	optFd uint
 
 	optRegion  string
@@ -21,6 +28,9 @@ var (
 )
 
 func init() {
+	flag.BoolVar(&optVersion, "v", false, "show version")
+	flag.BoolVar(&optVersion, "version", false, "show version")
+
 	// file descriptor option for Circus
 	flag.UintVar(&optFd, "fd", 0, "File descriptor to listen and serve.")
 	flag.StringVar(&optRegion, "region", "", "AWS region")
@@ -30,7 +40,16 @@ func init() {
 	flag.Parse()
 }
 
+func showVersion() {
+	fmt.Printf("RNBin %s %s %s\n", version, hash, goversion)
+}
+
 func main() {
+	if optVersion {
+		showVersion()
+		return
+	}
+
 	if optRegion == "" {
 		log.Fatal("region is required.")
 	}
