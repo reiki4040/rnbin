@@ -4,10 +4,17 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/olahol/go-imageupload"
 
 	s3b "github.com/reiki4040/rnbin/s3backend"
+)
+
+const (
+	DEFAULT_CREATED_BY = "RNBin"
+
+	TIME_FORMAT = "2006-01-02T03:04:05"
 )
 
 func NewAPI(region string, buckets []string) *API {
@@ -27,15 +34,25 @@ func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	name := r.FormValue("name")
+	if name == "" {
+		responseBadRequest(w, "name is required")
+		return
+	}
+
 	sep := r.FormValue("sep")
 	if sep == "" {
 		responseBadRequest(w, "sep is required")
 		return
 	}
 
-	comment := r.FormValue("comment")
-	if len(comment) > 140 {
-		responseBadRequest(w, "comment lenght lower equal 140")
+	createdBy := r.FormValue("createdBy")
+	if createdBy == "" {
+		createdBy = DEFAULT_CREATED_BY
+	}
+
+	if len(createdBy) > 100 {
+		responseBadRequest(w, "created by lenght lower equal 100")
 		return
 	}
 
@@ -48,14 +65,12 @@ func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
 	log.Printf("uploaded %s", contentType)
 	log.Printf("uploaded %d bytes data", r.ContentLength)
 
-	meta := make(map[string]string, 1)
-	meta["comment"] = comment
 	data := &s3b.RNBinData{
-		Sep:         sep,
-		Name:        "",
+		OriginName:  name,
 		ContentType: contentType,
 		Data:        img.Data,
-		Metadata:    meta,
+		CreatedBy:   createdBy,
+		Sep:         sep,
 	}
 
 	path, err := api.S3m.Store(data)
@@ -109,11 +124,43 @@ func (api *API) GetMeta(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
-	log.Printf("get meta len: %d", len(meta))
 
-	resp := ConvertMeta(meta)
+	resp := ConvertS3Resp(meta)
+	resp.Key = key
 
 	responseOK(w, resp)
+}
+
+// caution: s3 metadata key name first char is Upper
+func ConvertS3Resp(m *s3b.Meta) *MetaResponse {
+	lm := TtoA(&m.LastModified)
+
+	meta := &RespMeta{
+		ContentType:   m.ContentType,
+		ContentLength: m.ContentLength,
+		LastModified:  lm,
+
+		OriginName: m.OriginName,
+		Sep:        m.Sep,
+		CreatedBy:  m.CreatedBy,
+	}
+
+	return &MetaResponse{Metadata: meta}
+}
+
+type MetaResponse struct {
+	Key      string    `json:"key"`
+	Metadata *RespMeta `json:"metadata"`
+}
+
+type RespMeta struct {
+	ContentType   string `json:"content_type"`
+	ContentLength int64  `json:"content_length"`
+	LastModified  string `json:"last_modified"`
+
+	OriginName string `json:"origin_name"`
+	Sep        string `json:"sep"`
+	CreatedBy  string `json:"created_by"`
 }
 
 func responseOK(w http.ResponseWriter, resp interface{}) {
@@ -126,6 +173,14 @@ func responseBadRequest(w http.ResponseWriter, msg string) {
 
 func responseError(w http.ResponseWriter, status int, msg string) {
 	responseJson(w, status, NewErrResp(msg))
+}
+
+func NewErrResp(msg string) *ErrorResponse {
+	return &ErrorResponse{Msg: msg}
+}
+
+type ErrorResponse struct {
+	Msg string `json:"error_message"`
 }
 
 func responseJson(w http.ResponseWriter, status int, item interface{}) {
@@ -143,43 +198,6 @@ func writeResponse(w http.ResponseWriter, status int, body []byte) {
 	w.Write(body)
 }
 
-// caution: s3 metadata key name first char is Upper
-func ConvertMeta(m map[string]*string) *Meta {
-	meta := &Meta{}
-
-	key := m["Key"]
-	if key != nil {
-		meta.Key = *key
-	}
-
-	createBy := m["Create_by"]
-	if createBy != nil {
-		meta.CreateBy = *createBy
-	}
-
-	comment := m["Comment"]
-	if comment != nil {
-		meta.Comment = *comment
-	}
-
-	return meta
-}
-
-type MetaResponse struct {
-	Metadata Meta `json:"metadata"`
-}
-
-type Meta struct {
-	Key         string `json:"key"`
-	ContentType string `json:"content_type"`
-	CreateBy    string `json:"create_by"`
-	Comment     string `json:"comment"`
-}
-
-func NewErrResp(msg string) *ErrorResponse {
-	return &ErrorResponse{Msg: msg}
-}
-
-type ErrorResponse struct {
-	Msg string `json:"error_message"`
+func TtoA(t *time.Time) string {
+	return t.Format(TIME_FORMAT)
 }

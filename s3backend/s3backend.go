@@ -22,6 +22,10 @@ const (
 	SEP_S3_DIR   = "/"
 	SEP_SUFFIX   = "-"
 	SEP_POSITION = "@"
+
+	RNBIN_META_ORIGIN_NAME = "Rnbin-Origin-Name"
+	RNBIN_META_CREATED_BY  = "Rnbin-Created-By"
+	RNBIN_META_SEP         = "Rnbin-Sep"
 )
 
 var (
@@ -49,20 +53,11 @@ var (
 )
 
 type RNBinData struct {
-	Sep         string
-	Name        string
+	OriginName  string
 	ContentType string
 	Data        []byte
-	Metadata    map[string]string
-}
-
-func (d *RNBinData) convmeta() map[string]*string {
-	m := make(map[string]*string)
-	for k, v := range d.Metadata {
-		m[k] = &v
-	}
-
-	return m
+	Sep         string
+	CreatedBy   string
 }
 
 func NewS3Backend(region string, buckets []string) *S3Backend {
@@ -99,10 +94,10 @@ func (s3 *S3Backend) GetBucketName(pos int) (string, error) {
 func (s3 *S3Backend) Store(data *RNBinData) (string, error) {
 	r := bytes.NewReader(data.Data)
 	path, pos := GenPathAndDistPosition(data.Data, data.Sep, s3.Distribution)
-	return s3.StoreWithReader(pos, path, data.Name, data.ContentType, r, data.convmeta())
+	return s3.StoreWithReader(pos, data.Sep, path, data.OriginName, data.ContentType, data.CreatedBy, r)
 }
 
-func (s3 *S3Backend) StoreWithReader(pos int, path, name, contentType string, reader io.Reader, meta map[string]*string) (string, error) {
+func (s3 *S3Backend) StoreWithReader(pos int, sep, path, name, contentType, createdBy string, reader io.Reader) (string, error) {
 	// UploadInput
 	// https://github.com/aws/aws-sdk-go/blob/master/service/s3/s3manager/upload.go#L99
 
@@ -111,6 +106,11 @@ func (s3 *S3Backend) StoreWithReader(pos int, path, name, contentType string, re
 		return "", err
 	}
 
+	meta := make(map[string]*string, 3)
+
+	meta[RNBIN_META_ORIGIN_NAME] = &name
+	meta[RNBIN_META_CREATED_BY] = &createdBy
+	meta[RNBIN_META_SEP] = &sep
 	_, err = s3.Uploader.Upload(&s3manager.UploadInput{
 		Body:        reader,
 		Bucket:      aws.String(bucket),
@@ -160,7 +160,7 @@ func (s3m *S3Backend) GetToWriteAt(pos int, path string, w io.WriterAt) (int64, 
 	return numBytes, nil
 }
 
-func (s3m *S3Backend) GetMeta(key string) (map[string]*string, error) {
+func (s3m *S3Backend) GetMeta(key string) (*Meta, error) {
 	path, pos, err := resolvePosition(key)
 	if err != nil {
 		return nil, err
@@ -181,10 +181,87 @@ func (s3m *S3Backend) GetMeta(key string) (map[string]*string, error) {
 		return nil, resolveS3Error(err)
 	}
 
-	return resp.Metadata, nil
+	return convertMeta(resp), nil
 }
 
-func (s3m *S3Backend) GetObject(key string) ([]byte, map[string]*string, error) {
+type Meta struct {
+	ContentType   string
+	ContentLength int64
+	LastModified  time.Time
+
+	OriginName string
+	Sep        string
+	CreatedBy  string
+}
+
+func convertMeta(resp *s3.HeadObjectOutput) *Meta {
+	respMeta := Meta{}
+	ct := resp.ContentType
+	if ct != nil {
+		respMeta.ContentType = *ct
+	}
+
+	cl := resp.ContentLength
+	if cl != nil {
+		respMeta.ContentLength = *cl
+	}
+
+	lm := resp.LastModified
+	if lm != nil {
+		respMeta.LastModified = *lm
+	}
+
+	s3meta := resp.Metadata
+	name := s3meta[RNBIN_META_ORIGIN_NAME]
+	if name != nil && *name != "" {
+		respMeta.OriginName = *name
+	}
+
+	cb := s3meta[RNBIN_META_CREATED_BY]
+	if cb != nil && *cb != "" {
+		respMeta.CreatedBy = *cb
+	}
+
+	sep := s3meta[RNBIN_META_SEP]
+	if sep != nil && *sep != "" {
+		respMeta.Sep = *sep
+	}
+
+	return &respMeta
+}
+
+func convertMetaObject(resp *s3.GetObjectOutput) *Meta {
+	respMeta := Meta{}
+	ct := resp.ContentType
+	if ct != nil {
+		respMeta.ContentType = *ct
+	}
+
+	cl := resp.ContentLength
+	if cl != nil {
+		respMeta.ContentLength = *cl
+	}
+
+	lm := resp.LastModified
+	if lm != nil {
+		respMeta.LastModified = *lm
+	}
+
+	s3meta := resp.Metadata
+	sep := s3meta["Rnbin-Sep"]
+	if sep != nil && *sep != "" {
+		respMeta.Sep = *sep
+	}
+
+	cb := s3meta["Rnbin-Createdby"]
+	if cb != nil && *cb != "" {
+		respMeta.CreatedBy = *cb
+	}
+
+	return &respMeta
+}
+
+func (s3m *S3Backend) GetObject(key string) ([]byte, *Meta, error) {
 	path, pos, err := resolvePosition(key)
 	if err != nil {
 		return nil, nil, err
@@ -202,7 +279,7 @@ func (s3m *S3Backend) GetObject(key string) ([]byte, map[string]*string, error) 
 	return data, meta, nil
 }
 
-func (s3m *S3Backend) GetObjectWithReadCloser(pos int, path string) (io.ReadCloser, map[string]*string, error) {
+func (s3m *S3Backend) GetObjectWithReadCloser(pos int, path string) (io.ReadCloser, *Meta, error) {
 	bucket, err := s3m.GetBucketName(pos)
 	if err != nil {
 		return nil, nil, err
@@ -218,7 +295,7 @@ func (s3m *S3Backend) GetObjectWithReadCloser(pos int, path string) (io.ReadClos
 		return nil, nil, err
 	}
 
-	return resp.Body, resp.Metadata, nil
+	return resp.Body, convertMetaObject(resp), nil
 }
 
 func Sha256(bytes []byte) string {
