@@ -10,16 +10,14 @@ import (
 	s3b "github.com/reiki4040/rnbin/s3backend"
 )
 
-func NewAPI(region, bucket string) *API {
+func NewAPI(region string, buckets []string) *API {
 	return &API{
-		BucketName: bucket,
-		S3m:        s3b.NewS3Backend(region, bucket),
+		S3m: s3b.NewS3Backend(region, buckets),
 	}
 }
 
 type API struct {
-	BucketName string
-	S3m        *s3b.S3Backend
+	S3m *s3b.S3Backend
 }
 
 func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +98,16 @@ func (api *API) GetMeta(w http.ResponseWriter, r *http.Request) {
 
 	meta, err := api.S3m.GetMeta(name)
 	if err != nil {
-		panic(err)
+		switch err {
+		case s3b.ERR_OUTOFBOUNDS_BUCKET_POSITION:
+			responseError(w, http.StatusInternalServerError, "internal server error")
+			return
+		case s3b.ERR_FILE_NOT_FOUND:
+			responseError(w, http.StatusNotFound, "file not found")
+			return
+		default:
+			panic(err)
+		}
 	}
 	log.Printf("get meta len: %d", len(meta))
 

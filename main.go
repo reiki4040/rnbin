@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
@@ -15,15 +16,15 @@ import (
 var (
 	optFd uint
 
-	optRegion string
-	optBucket string
+	optRegion  string
+	optBuckets string
 )
 
 func init() {
 	// file descriptor option for Circus
 	flag.UintVar(&optFd, "fd", 0, "File descriptor to listen and serve.")
 	flag.StringVar(&optRegion, "region", "", "AWS region")
-	flag.StringVar(&optBucket, "bucket", "", "AWS S3 bucket name")
+	flag.StringVar(&optBuckets, "buckets", "", "AWS S3 bucket names separated with comma")
 
 	// hiding goji -bind option.
 	flag.Parse()
@@ -33,14 +34,19 @@ func main() {
 	if optRegion == "" {
 		log.Fatal("region is required.")
 	}
-	if optBucket == "" {
+	if optBuckets == "" {
 		log.Fatal("bucket is required.")
+	}
+	buckets := strings.Split(optBuckets, ",")
+	for _, b := range buckets {
+		if b == "" {
+			log.Fatal("buckets includes empty name")
+		}
 	}
 
 	region := optRegion
-	bucket := optBucket
 
-	api, err := createAPI(region, bucket)
+	api, err := createAPI(region, buckets)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +67,7 @@ func main() {
 	}
 }
 
-func createAPI(region, bucket string) (http.Handler, error) {
+func createAPI(region string, bucket []string) (http.Handler, error) {
 	api := NewAPI(region, bucket)
 
 	apiMux := web.New()

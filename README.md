@@ -35,3 +35,10 @@ Please create metadata index in front of RNBin application.
 
 - library in your go application (import in your golang program)
 - microservice or other program language (http server)
+
+## TODO
+
+- logging
+- http response format
+- bucket checking
+- testing
