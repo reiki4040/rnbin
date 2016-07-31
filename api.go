@@ -72,14 +72,14 @@ type PostBinResp struct {
 
 func (api *API) GetBin(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	name := r.FormValue("name")
-	if name == "" {
-		responseBadRequest(w, "require name parameter.")
+	key := r.FormValue("key")
+	if key == "" {
+		responseBadRequest(w, "require key parameter.")
 		return
 	}
-	log.Printf("get file: %s", name)
+	log.Printf("get file: %s", key)
 
-	data, err := api.S3m.Get(name)
+	data, err := api.S3m.Get(key)
 	if err != nil {
 		panic(err)
 	}
@@ -89,14 +89,14 @@ func (api *API) GetBin(w http.ResponseWriter, r *http.Request) {
 
 func (api *API) GetMeta(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	name := r.FormValue("name")
-	if name == "" {
-		responseBadRequest(w, "require name parameter.")
+	key := r.FormValue("key")
+	if key == "" {
+		responseBadRequest(w, "require key parameter.")
 		return
 	}
-	log.Printf("get file meta: %s", name)
+	log.Printf("get file meta: %s", key)
 
-	meta, err := api.S3m.GetMeta(name)
+	meta, err := api.S3m.GetMeta(key)
 	if err != nil {
 		switch err {
 		case s3b.ERR_OUTOFBOUNDS_BUCKET_POSITION:
