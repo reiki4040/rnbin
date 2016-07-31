@@ -36,6 +36,16 @@ Please create metadata index in front of RNBin application.
 - library in your go application (import in your golang program)
 - microservice or other program language (http server)
 
+## run http server
+
+create buckets and then
+
+```
+./rnbin -region ap-northeast-1 -buckets=bucket1,bucket2,bucket3
+```
+
+running port 8000
+
 ## TODO
 
 - logging
