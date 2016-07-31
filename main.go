@@ -11,7 +11,7 @@ import (
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
 
-	"log"
+	"github.com/reiki4040/rnlog"
 )
 
 var (
@@ -25,6 +25,8 @@ var (
 
 	optRegion  string
 	optBuckets string
+
+	optLogLevel int
 )
 
 func init() {
@@ -36,12 +38,14 @@ func init() {
 	flag.StringVar(&optRegion, "region", "", "AWS region")
 	flag.StringVar(&optBuckets, "buckets", "", "AWS S3 bucket names separated with comma")
 
+	flag.IntVar(&optLogLevel, "loglevel", rnlog.LEVEL_INFO, "set RNBin log level")
+
 	// hiding goji -bind option.
 	flag.Parse()
 }
 
 func showVersion() {
-	fmt.Printf("RNBin %s %s %s\n", version, hash, goversion)
+	fmt.Println("RNBin %s %s %s\n", version, hash, goversion)
 }
 
 func main() {
@@ -50,16 +54,19 @@ func main() {
 		return
 	}
 
+	rnlog.ChangeLevel(optLogLevel)
+	rnlog.Notice("start RNBin.")
+
 	if optRegion == "" {
-		log.Fatal("region is required.")
+		rnlog.Fatal("region is required.")
 	}
 	if optBuckets == "" {
-		log.Fatal("bucket is required.")
+		rnlog.Fatal("bucket is required.")
 	}
 	buckets := strings.Split(optBuckets, ",")
 	for _, b := range buckets {
 		if b == "" {
-			log.Fatal("buckets includes empty name")
+			rnlog.Fatal("buckets includes empty name")
 		}
 	}
 
@@ -67,7 +74,7 @@ func main() {
 
 	api, err := createAPI(region, buckets)
 	if err != nil {
-		panic(err)
+		rnlog.Fatalf("problem in initialize API: %s", err.Error())
 	}
 
 	rootMux := goji.DefaultMux
@@ -76,7 +83,7 @@ func main() {
 	if optFd != 0 {
 		l, err := net.FileListener(os.NewFile(uintptr(optFd), ""))
 		if err != nil {
-			panic(err)
+			rnlog.Fatalf("failed file descriptor listen: %s", err.Error())
 		}
 
 		goji.ServeListener(l)
@@ -84,6 +91,8 @@ func main() {
 		// if not specified fd, then goji default(:8000 or -bind arg)
 		goji.Serve()
 	}
+
+	rnlog.Notice("stopped RNBin.")
 }
 
 func createAPI(region string, bucket []string) (http.Handler, error) {

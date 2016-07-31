@@ -2,13 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/olahol/go-imageupload"
 
 	s3b "github.com/reiki4040/rnbin/s3backend"
+	"github.com/reiki4040/rnlog"
 )
 
 const (
@@ -62,8 +62,8 @@ func (api *API) PostBin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("uploaded %s", contentType)
-	log.Printf("uploaded %d bytes data", r.ContentLength)
+	rnlog.Debugf("uploaded %s", contentType)
+	rnlog.Debugf("uploaded %d bytes data", r.ContentLength)
 
 	data := &s3b.RNBinData{
 		OriginName:  name,
@@ -92,7 +92,7 @@ func (api *API) GetBin(w http.ResponseWriter, r *http.Request) {
 		responseBadRequest(w, "require key parameter.")
 		return
 	}
-	log.Printf("get file: %s", key)
+	rnlog.Debugf("get file: %s", key)
 
 	data, err := api.S3m.Get(key)
 	if err != nil {
@@ -109,7 +109,7 @@ func (api *API) GetMeta(w http.ResponseWriter, r *http.Request) {
 		responseBadRequest(w, "require key parameter.")
 		return
 	}
-	log.Printf("get file meta: %s", key)
+	rnlog.Debugf("get file meta: %s", key)
 
 	meta, err := api.S3m.GetMeta(key)
 	if err != nil {
