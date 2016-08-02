@@ -1,5 +1,5 @@
-hash: 6f8b7fa313a49437fba9ddcbd9181aee39986492eab22e33c1dbfe9d78387ec6
-updated: 2016-07-31T14:20:35.127147104+09:00
+hash: 0679cfd0a52e064694333cc7552cd35202a3d1d258a1b0a5e6ab5313db8b0ab9
+updated: 2016-08-02T23:23:09.320866023+09:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: 3b8c171554fc7d4fc53b87e25d4926a9e7495c2e
@@ -37,6 +37,8 @@ imports:
   version: 891127d8d1b52734debe1b3c3d7e747502b6c366
 - name: github.com/olahol/go-imageupload
   version: 09d2b92fa05eff7d0c06d77a7803c74a824b0eb1
+- name: github.com/reiki4040/rnlog
+  version: e67bd262e2999c75e2a28ed46571ddfef68541f4
 - name: github.com/zenazn/goji
   version: 64eb34159fe53473206c2b3e70fe396a639452f2
   subpackages:
