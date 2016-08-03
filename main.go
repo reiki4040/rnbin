@@ -8,8 +8,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zenazn/goji"
+	"github.com/zenazn/goji/bind"
+	"github.com/zenazn/goji/graceful"
 	"github.com/zenazn/goji/web"
+	"github.com/zenazn/goji/web/middleware"
 
 	"github.com/reiki4040/rnlog"
 )
@@ -55,7 +57,6 @@ func main() {
 	}
 
 	rnlog.ChangeLevel(optLogLevel)
-	rnlog.Notice("start RNBin.")
 
 	if optRegion == "" {
 		rnlog.Fatal("region is required.")
@@ -77,22 +78,45 @@ func main() {
 		rnlog.Fatalf("problem in initialize API: %s", err.Error())
 	}
 
-	rootMux := goji.DefaultMux
+	rootMux := web.New()
+	rootMux.Use(middleware.RequestID)
+	rootMux.Use(middleware.Recoverer)
+	rootMux.Use(AccessLogger)
+
 	rootMux.Handle("/api/*", api)
 
+	rootMux.Compile()
+	http.Handle("/", rootMux)
+
+	graceful.HandleSignals()
+	bind.Ready()
+	graceful.PreHook(func() { rnlog.Notice("RNBin WebAPI received signal, gracefully stopping") })
+	graceful.PostHook(func() { rnlog.Notice("RNBin WebAPI stopped") })
+
+	var l net.Listener
 	if optFd != 0 {
-		l, err := net.FileListener(os.NewFile(uintptr(optFd), ""))
+		var err error
+		l, err = net.FileListener(os.NewFile(uintptr(optFd), ""))
 		if err != nil {
 			rnlog.Fatalf("failed file descriptor listen: %s", err.Error())
 		}
-
-		goji.ServeListener(l)
 	} else {
-		// if not specified fd, then goji default(:8000 or -bind arg)
-		goji.Serve()
+		// if not specified fd, then goji default(:8000)
+		l, err = net.Listen("tcp", ":8000")
+		if err != nil {
+			rnlog.Fatalf("failed port listen: %s", err.Error())
+		}
 	}
 
-	rnlog.Notice("stopped RNBin.")
+	rnlog.Notice("start RNBin WebAPI")
+	err = graceful.Serve(l, http.DefaultServeMux)
+
+	if err != nil {
+		rnlog.Fatal(err.Error())
+	}
+
+	graceful.Wait()
+	rnlog.Notice("finished RNBin WebAPI")
 }
 
 func createAPI(region string, bucket []string) (http.Handler, error) {

@@ -1,8 +1,8 @@
 hash: 0679cfd0a52e064694333cc7552cd35202a3d1d258a1b0a5e6ab5313db8b0ab9
-updated: 2016-08-02T23:23:09.320866023+09:00
+updated: 2016-08-03T23:07:46.960137471+09:00
 imports:
 - name: github.com/aws/aws-sdk-go
-  version: 3b8c171554fc7d4fc53b87e25d4926a9e7495c2e
+  version: 00e2bf9d1518c2b7d8a97eb05b5d2a9afd1dd34e
   subpackages:
   - aws
   - aws/session
@@ -12,6 +12,7 @@ imports:
   - aws/credentials
   - aws/client
   - aws/corehandlers
+  - aws/credentials/stscreds
   - aws/defaults
   - aws/request
   - private/endpoints
@@ -22,6 +23,7 @@ imports:
   - private/protocol/restxml
   - private/waiter
   - service/s3/s3iface
+  - service/sts
   - aws/credentials/ec2rolecreds
   - aws/credentials/endpointcreds
   - aws/ec2metadata
@@ -43,9 +45,9 @@ imports:
   version: 64eb34159fe53473206c2b3e70fe396a639452f2
   subpackages:
   - web
+  - web/middleware
+  - web/mutil
   - bind
   - graceful
-  - web/middleware
   - graceful/listener
-  - web/mutil
 devImports: []
