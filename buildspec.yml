@@ -7,16 +7,15 @@ phases:
   pre_build:
     commands:
       - git checkout feature/aws_codebuild
-      - mkdir -p $GOPATH/src/github.com/reiki4040/rnbin/s3backend
+      - mkdir -p $GOPATH/src/github.com/reiki4040/rnbin
       - mv * $GOPATH/src/github.com/reiki4040/rnbin/
-      - mv s3backend/* $GOPATH/src/github.com/reiki4040/rnbin/s3backend/
       - cd $GOPATH/src/github.com/reiki4040/rnbin && glide up
   build:
     commands:
       - cd $GOPATH/src/github.com/reiki4040/rnbin && ./build.sh
-        #  post_build:
-        #    commands:
-        #      - ls -l
+  post_build:
+    commands:
+      - ls -l $GOPATH/src/github.com/reiki4040/rnbin
 artifacts:
   type: zip
   files:
