@@ -12,7 +12,7 @@ phases:
       - mv * /go/src/github.com/reiki4040/rnbin/
   build:
     commands:
-      - cd /go/src/github.com/reiki4040/rnbin && go build -o "rnbin"
+      - cd /go/src/github.com/reiki4040/rnbin && ./build.sh
   post_build:
     commands:
       - echo $GOPATH
@@ -20,4 +20,4 @@ phases:
 artifacts:
   type: zip
   files:
-    - rnbin
+    - /go/src/github.com/reiki4040/rnbin/rnbin
