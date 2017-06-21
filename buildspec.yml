@@ -1,0 +1,14 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - go get github.com/Masterminds/glide
+  build:
+    commands:
+      - git checkout feature/aws_codebuild
+      - ./build.sh
+artifacts:
+  type: zip
+  files:
+    - rnbin
