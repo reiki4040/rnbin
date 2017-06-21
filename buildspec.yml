@@ -8,15 +8,14 @@ phases:
     commands:
       - git checkout feature/aws_codebuild
       - glide up
-      - mkdir -p $GOPATH/src/github.com/reiki4040/rnbin
-      - mv * $GOPATH/src/github.com/reiki4040/rnbin/
+      - mkdir -p /go/src/github.com/reiki4040/rnbin
+      - mv * /go/src/github.com/reiki4040/rnbin/
   build:
     commands:
-      - cd $GOPATH/src/github.com/reiki4040/rnbin && go build -o "rnbin"
+      - cd /go/src/github.com/reiki4040/rnbin && go build -o "rnbin"
   post_build:
     commands:
       - echo $GOPATH
-      - ls -l $GOPATH/src/github.com/reiki4040/rnbin
 
 artifacts:
   type: zip
