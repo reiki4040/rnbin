@@ -7,9 +7,9 @@ phases:
   pre_build:
     commands:
       - git checkout feature/aws_codebuild
+      - glide up
       - mkdir -p $GOPATH/src/github.com/reiki4040/rnbin
       - mv * $GOPATH/src/github.com/reiki4040/rnbin/
-      - cd $GOPATH/src/github.com/reiki4040/rnbin && glide up
   build:
     commands:
       - cd $GOPATH/src/github.com/reiki4040/rnbin && GOOS="$os" GOARCH="amd64" go build -o "rnbin" -ldflags "-X main.version=cb -X main.hash=HASH -X \"main.goversion=go1.7\""
