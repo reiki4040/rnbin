@@ -16,8 +16,9 @@ phases:
   post_build:
     commands:
       - echo $GOPATH
+      - cp /go/src/github.com/reiki4040/rnbin/rnbin .
 
 artifacts:
   type: zip
   files:
-    - /go/src/github.com/reiki4040/rnbin/rnbin
+    - rnbin
