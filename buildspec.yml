@@ -7,7 +7,7 @@ phases:
   build:
     commands:
       - git checkout feature/aws_codebuild
-      - ./build.sh
+      - ./build.sh -g
 artifacts:
   type: zip
   files:
