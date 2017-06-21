@@ -4,10 +4,16 @@ phases:
   install:
     commands:
       - go get github.com/Masterminds/glide
-  build:
+  pre_build:
     commands:
       - git checkout feature/aws_codebuild
-      - ./build.sh -u
+      - glide up
+  build:
+    commands:
+      - ./build.sh
+  post_build:
+    commands:
+      - ls -l
 artifacts:
   type: zip
   files:
