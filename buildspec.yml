@@ -12,10 +12,12 @@ phases:
       - mv * $GOPATH/src/github.com/reiki4040/rnbin/
   build:
     commands:
-      - cd $GOPATH/src/github.com/reiki4040/rnbin && GOOS="$os" GOARCH="amd64" go build -o "rnbin" -ldflags "-X main.version=cb -X main.hash=HASH -X \"main.goversion=go1.7\""
+      - cd $GOPATH/src/github.com/reiki4040/rnbin && go build -o "rnbin"
   post_build:
     commands:
+      - echo $GOPATH
       - ls -l $GOPATH/src/github.com/reiki4040/rnbin
+
 artifacts:
   type: zip
   files:
