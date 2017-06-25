@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 VERSION=$(git describe --tags)
 HASH=$(git rev-parse --verify HEAD)
 GOVERSION=$(go version)
