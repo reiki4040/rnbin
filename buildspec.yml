@@ -6,21 +6,26 @@ phases:
       - go get github.com/Masterminds/glide
   pre_build:
     commands:
+      # debug
       - pwd
+      - echo $GOPATH
+
+      # install libraries
       - glide up
-        #      - mkdir -p /go/src/github.com/reiki4040/rnbin
-        #      - mv * /go/src/github.com/reiki4040/rnbin/
-        #      - mv .git /go/src/github.com/reiki4040/rnbin/
+
+      # workaround for vendoring
+      - mkdir -p /go/src/github.com/reiki4040/rnbin
+      - mv * /go/src/github.com/reiki4040/rnbin/
+      - mv .git /go/src/github.com/reiki4040/rnbin/
   build:
     commands:
-      - ./build.sh
-            #      - cd /go/src/github.com/reiki4040/rnbin && ./build.sh
+      # workaround for vendoring
+      - cd /go/src/github.com/reiki4040/rnbin && ./build.sh
   post_build:
     commands:
-      - echo $GOPATH
-        #- cp /go/src/github.com/reiki4040/rnbin/rnbin .
+      # workaround for vendoring
+      - cp /go/src/github.com/reiki4040/rnbin/rnbin .
 
 artifacts:
-  type: zip
   files:
     - rnbin
