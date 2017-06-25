@@ -22,4 +22,3 @@ artifacts:
   type: zip
   files:
     - rnbin
-    - README.md
