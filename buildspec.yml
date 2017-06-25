@@ -6,7 +6,7 @@ phases:
       - go get github.com/Masterminds/glide
   pre_build:
     commands:
-      - git checkout feature/aws_codebuild
+            #      - git checkout feature/aws_codebuild
       - glide up
       - mkdir -p /go/src/github.com/reiki4040/rnbin
       - mv * /go/src/github.com/reiki4040/rnbin/
